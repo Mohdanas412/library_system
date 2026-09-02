@@ -42,5 +42,13 @@ public class Book {
      public void setStatus(BookStatus status) {
           this.status = status;
      }
-     
+     public String toString() {
+          return "Book{" +
+                  "ISBN='" + ISBN + '\'' +
+                  ", title='" + title + '\'' +
+                  ", author='" + author + '\'' +
+                  ", publicationDate=" + publicationDate +
+                  ", status=" + status +
+                  '}';
+     }
 }
