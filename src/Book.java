@@ -7,7 +7,7 @@ public class Book {
      private LocalDate publicationDate;
      private BookStatus status;
 
-     Book(String ISBN, String title, String author, LocalDate publicationDate) {
+     public Book(String ISBN, String title, String author, LocalDate publicationDate) {
           this.ISBN = ISBN;
           this.title = title;
           this.author = author;
@@ -42,6 +42,8 @@ public class Book {
      public void setStatus(BookStatus status) {
           this.status = status;
      }
+
+     @Override 
      public String toString() {
           return "Book{" +
                   "ISBN='" + ISBN + '\'' +
