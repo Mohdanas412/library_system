@@ -36,4 +36,46 @@ public class Library {
         return members;
     }
 
+    public boolean borrowBook(String member_ID,String ISBN) {
+        Member foundMember = null;
+        for (Member m : members) {
+            if (m.getMember_ID().equals(member_ID)) {
+                foundMember = m;
+                break;
+            }
+        }
+        if (foundMember == null) {
+            System.out.println("No member found with ID" + member_ID);
+            return false;
+        }
+
+        Book foundBook = null;
+        for (Book b : books) {
+            if (b.getISBN().equals(ISBN)) {
+                foundBook = b;
+                break;
+            }
+        }
+        if (foundBook == null) {
+            System.out.println("No book found with ISBN" + ISBN);
+            return false;
+        }
+
+        if (foundBook.getStatus() != BookStatus.AVAILABLE) {
+            System.out.println("Book with ISBN" + ISBN + "is not available.");
+            return false;
+        }
+
+        if (!foundMember.canBorrowMore()) {
+            System.out.println("Member" + member_ID + "has reached the borrow limit");
+            return false;
+        }
+        foundBook.setStatus(BookStatus.BoRROWED);
+        foundMember.getBorrowedBooks().add(foundBook);
+
+        System.out.println("Book " + ISBN + " borrowed successfully by member " + member_ID);
+        return true;
+
+    }
+
 }

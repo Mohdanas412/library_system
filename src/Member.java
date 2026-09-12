@@ -41,6 +41,10 @@ public class Member {
         this.email = email;
     }
 
+    public boolean canBorrowMore() {
+        return borrowedBooks.size() < 3;
+    }
+
     @Override
     public String toString() {
     return "Member{" +
