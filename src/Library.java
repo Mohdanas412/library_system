@@ -12,7 +12,7 @@ public class Library {
     public boolean addBook(Book newBook) {
         for (Book  b : books) {
             if(b.getISBN().equals(newBook.getISBN())) {
-                System.out.println("Book with ISBN " + newBook.getISBN() + " already exists.");
+                System.out.println("Book with ISBN  " + newBook.getISBN() + " already exists.");
                 return false;
             }
         }
@@ -36,7 +36,7 @@ public class Library {
         return members;
     }
 
-    public boolean borrowBook(String member_ID,String ISBN) {
+    public boolean borrowBook(String member_ID,String ISBN) throws BookNotAvailableException,BorrowLimitExceededException {
         Member foundMember = null;
         for (Member m : members) {
             if (m.getMember_ID().equals(member_ID)) {
@@ -45,7 +45,7 @@ public class Library {
             }
         }
         if (foundMember == null) {
-            System.out.println("No member found with ID" + member_ID);
+            System.out.println("No member found with ID " + member_ID);
             return false;
         }
 
@@ -57,18 +57,16 @@ public class Library {
             }
         }
         if (foundBook == null) {
-            System.out.println("No book found with ISBN" + ISBN);
+            System.out.println("No book found with ISBN " + ISBN);
             return false;
         }
 
         if (foundBook.getStatus() != BookStatus.AVAILABLE) {
-            System.out.println("Book with ISBN" + ISBN + "is not available.");
-            return false;
+            throw new BookNotAvailableException ("This book is unavailable!");
         }
 
         if (!foundMember.canBorrowMore()) {
-            System.out.println("Member" + member_ID + "has reached the borrow limit");
-            return false;
+           throw new BorrowLimitExceededException ("Member has exceeded the borrow limit!");
         }
         foundBook.setStatus(BookStatus.BORROWED);
         foundMember.getBorrowedBooks().add(foundBook);
