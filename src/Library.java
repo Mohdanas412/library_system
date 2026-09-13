@@ -70,7 +70,7 @@ public class Library {
             System.out.println("Member" + member_ID + "has reached the borrow limit");
             return false;
         }
-        foundBook.setStatus(BookStatus.BoRROWED);
+        foundBook.setStatus(BookStatus.BORROWED);
         foundMember.getBorrowedBooks().add(foundBook);
 
         System.out.println("Book " + ISBN + " borrowed successfully by member " + member_ID);

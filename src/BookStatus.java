@@ -1,6 +1,6 @@
 public enum BookStatus {
     AVAILABLE,
-    BoRROWED,
+    BORROWED,
     RESERVED,
     LOST
 }
