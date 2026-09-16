@@ -5,16 +5,11 @@ public class Main {
 
         Library library = new Library();
 
-        // --- Setup ---
         Book book1 = new Book("978-1", "Effective Java", "Joshua Bloch", LocalDate.of(2018, 1, 6));
         Book book2 = new Book("978-2", "Clean Code", "Robert Martin", LocalDate.of(2008, 8, 1));
-        Book book3 = new Book("978-3", "Head First Java", "Kathy Sierra", LocalDate.of(2005, 2, 9));
-        Book book4 = new Book("978-4", "Java Concurrency in Practice", "Brian Goetz", LocalDate.of(2006, 5, 19));
 
         library.addBook(book1);
         library.addBook(book2);
-        library.addBook(book3);
-        library.addBook(book4);
 
         Member member1 = new Member("M001", "Alice", "9999999999", "alice@example.com");
         Member member2 = new Member("M002", "Bob", "8888888888", "bob@example.com");
@@ -31,69 +26,49 @@ public class Main {
             System.out.println("Borrow failed: " + e.getMessage());
         }
 
-        // --- Test 2: same book, same member again ---
-        System.out.println("\n--- Test 2: same book, same member, again ---");
+        // --- Test 2: return it immediately (should be on time, fine 0.0) ---
+        System.out.println("\n--- Test 2: return same day ---");
         try {
-            boolean t2 = library.borrowBook("M001", "978-1");
-            System.out.println("Result: " + t2);
-        } catch (LibraryException e) {
-            System.out.println("Borrow failed: " + e.getMessage());
+            double fine2 = library.returnBook("M001", "978-1");
+            System.out.println("Fine: " + fine2);
+        } catch (BookNotBorrowedException e) {
+            System.out.println("Return failed: " + e.getMessage());
         }
 
-        // --- Test 3: different member, same (already borrowed) book ---
-        System.out.println("\n--- Test 3: same book, different member ---");
+        // --- Test 3: return a book that was never borrowed by this member ---
+        System.out.println("\n--- Test 3: return without borrowing ---");
         try {
-            boolean t3 = library.borrowBook("M002", "978-1");
-            System.out.println("Result: " + t3);
-        } catch (LibraryException e) {
-            System.out.println("Borrow failed: " + e.getMessage());
+            double fine3 = library.returnBook("M002", "978-2");
+            System.out.println("Fine: " + fine3);
+        } catch (BookNotBorrowedException e) {
+            System.out.println("Return failed: " + e.getMessage());
         }
 
-        // --- Test 4: nonexistent ISBN ---
-        System.out.println("\n--- Test 4: nonexistent book ---");
+        // --- Test 4: return a book someone already returned (should fail again) ---
+        System.out.println("\n--- Test 4: return an already-returned book ---");
         try {
-            boolean t4 = library.borrowBook("M001", "978-999");
-            System.out.println("Result: " + t4);
-        } catch (LibraryException e) {
-            System.out.println("Borrow failed: " + e.getMessage());
+            double fine4 = library.returnBook("M001", "978-1");
+            System.out.println("Fine: " + fine4);
+        } catch (BookNotBorrowedException e) {
+            System.out.println("Return failed: " + e.getMessage());
         }
 
-        // --- Test 5: nonexistent member ---
+        // --- Test 5: return with nonexistent member ---
         System.out.println("\n--- Test 5: nonexistent member ---");
         try {
-            boolean t5 = library.borrowBook("M999", "978-2");
-            System.out.println("Result: " + t5);
-        } catch (LibraryException e) {
-            System.out.println("Borrow failed: " + e.getMessage());
+            double fine5 = library.returnBook("M999", "978-2");
+            System.out.println("Fine: " + fine5);
+        } catch (BookNotBorrowedException e) {
+            System.out.println("Return failed: " + e.getMessage());
         }
 
-        // --- Test 6: exceed borrow limit ---
-        System.out.println("\n--- Test 6: exceed limit ---");
-        System.out.println("Setup borrows for M002:");
+        // --- Test 6: return with nonexistent ISBN ---
+        System.out.println("\n--- Test 6: nonexistent book ---");
         try {
-            System.out.println("  " + library.borrowBook("M002", "978-2"));
-        } catch (LibraryException e) {
-            System.out.println("  Borrow failed: " + e.getMessage());
-        }
-        try {
-            System.out.println("  " + library.borrowBook("M002", "978-3"));
-        } catch (LibraryException e) {
-            System.out.println("  Borrow failed: " + e.getMessage());
-        }
-        try {
-            System.out.println("  " + library.borrowBook("M002", "978-4"));
-        } catch (LibraryException e) {
-            System.out.println("  Borrow failed: " + e.getMessage());
-        }
-
-        Book book5 = new Book("978-5", "Design Patterns", "Gang of Four", LocalDate.of(1994, 10, 21));
-        library.addBook(book5);
-
-        try {
-            boolean t6 = library.borrowBook("M002", "978-5");
-            System.out.println("4th borrow attempt result: " + t6);
-        } catch (LibraryException e) {
-            System.out.println("4th borrow attempt failed: " + e.getMessage());
+            double fine6 = library.returnBook("M001", "978-999");
+            System.out.println("Fine: " + fine6);
+        } catch (BookNotBorrowedException e) {
+            System.out.println("Return failed: " + e.getMessage());
         }
 
         // --- Final state ---
