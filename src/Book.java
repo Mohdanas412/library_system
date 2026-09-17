@@ -53,4 +53,20 @@ public class Book {
                   ", status=" + status +
                   '}';
      }
+     @Override 
+     public boolean equals(Object obj) {
+          if (this == obj) {
+               return true;
+          }
+          if (obj == null || !(obj instanceof Book)) {
+               return false;
+          }
+          Book other = (Book) obj;
+          return this.ISBN.equals(other.ISBN); 
+     }
+
+     @Override 
+     public int hashCode() {
+          return ISBN.hashCode();
+     }
 }

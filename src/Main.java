@@ -1,4 +1,5 @@
 import java.time.LocalDate;
+import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
@@ -70,6 +71,37 @@ public class Main {
         } catch (BookNotBorrowedException e) {
             System.out.println("Return failed: " + e.getMessage());
         }
+                System.out.println("\n--- Test 7: search books by title (partial, case-insensitive) ---");
+        List<Book> titleResults = library.searchBooksByTitle("clean");
+        for (Book b : titleResults) {
+            System.out.println(b);
+        }
+
+        System.out.println("\n--- Test 8: search books by author (partial, case-insensitive) ---");
+        List<Book> authorResults = library.searchBooksByAuthor("bloch");
+        for (Book b : authorResults) {
+            System.out.println(b);
+        }
+
+        System.out.println("\n--- Test 9: list currently borrowed books ---");
+        try {
+            library.borrowBook("M002", "978-2"); // borrow something so this list isn't empty
+        } catch (LibraryException e) {
+            System.out.println("Borrow failed: " + e.getMessage());
+        }
+        List<Book> borrowedNow = library.listBorrowedBooks();
+        for (Book b : borrowedNow) {
+            System.out.println(b);
+        }
+
+        System.out.println("\n--- Test 10: list overdue books (expect empty right now) ---");
+        List<Book> overdueNow = library.listOverdueBooks();
+        System.out.println("Overdue count: " + overdueNow.size());
+
+        System.out.println("\n--- Test 11: equals() by ISBN ---");
+        Book duplicateBook = new Book("978-1", "Effective Java", "Joshua Bloch", LocalDate.of(2018, 1, 6));
+        System.out.println("book1.equals(duplicateBook): " + book1.equals(duplicateBook));
+        System.out.println("book1 == duplicateBook: " + (book1 == duplicateBook));
 
         // --- Final state ---
         System.out.println("\n--- Final Book States ---");

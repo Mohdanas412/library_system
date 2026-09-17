@@ -2,6 +2,7 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Library {
     private List<Book> books;
@@ -81,7 +82,7 @@ public class Library {
         foundMember.getBorrowedBooks().add(foundBook);
 
         LocalDate borrowDate = LocalDate.now();
-        LocalDate dueDate = borrowDate.minusDays(3);
+        LocalDate dueDate = borrowDate.plusDays(14);
         BorrowRecord record = new BorrowRecord(foundBook, foundMember, borrowDate, dueDate);
         borrowRecords.add(record);
 
@@ -141,5 +142,30 @@ public class Library {
         activeRecord.markReturned();
 
         return fine;
+    }
+
+    public List<Book> searchBooksByTitle(String keyword) {
+        return books.stream()
+           .filter(b -> b.getTitle().toLowerCase().contains(keyword.toLowerCase()))
+           .collect(Collectors.toList());
+    }
+
+    public List<Book> searchBooksByAuthor(String keyword) {
+        return books.stream()
+           .filter(b -> b.getAuthor().toLowerCase().contains(keyword.toLowerCase()))
+           .collect(Collectors.toList());
+    }
+    public List<Book> listBorrowedBooks() {
+        return borrowRecords.stream()
+           .filter(r -> !r.isReturned())
+           .map(BorrowRecord::getBook)
+           .collect(Collectors.toList());
+    }
+    public List<Book> listOverdueBooks() {
+        LocalDate today = LocalDate.now();
+        return borrowRecords.stream()
+           .filter(r -> !r.isReturned() && today.isAfter(r.getDueDate()))
+           .map(BorrowRecord::getBook)
+           .collect(Collectors.toList());
     }
 }
