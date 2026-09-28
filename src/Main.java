@@ -1,138 +1,121 @@
-import exceptions.BookNotBorrowedException;
-import exceptions.LibraryException;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
+import java.util.Scanner;
 import model.Book;
-import model.Member;
 import service.Library;
 
 public class Main {
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final Library library = new Library();
+
     public static void main(String[] args) {
-
-        Library library = new Library();
-
-        Book book1 = new Book("978-1", "Effective Java", "Joshua Bloch", LocalDate.of(2018, 1, 6));
-        Book book2 = new Book("978-2", "Clean Code", "Robert Martin", LocalDate.of(2008, 8, 1));
-
-        library.addBook(book1);
-        library.addBook(book2);
-
-        Member member1 = new Member("M001", "Alice", "9999999999", "alice@example.com");
-        Member member2 = new Member("M002", "Bob", "8888888888", "bob@example.com");
-
-        library.registerMember(member1);
-        library.registerMember(member2);
-
-        // --- Test 1: valid borrow ---
-        System.out.println("\n--- Test 1: valid borrow ---");
         try {
-            boolean t1 = library.borrowBook("M001", "978-1");
-            System.out.println("Result: " + t1);
-        } catch (LibraryException e) {
-            System.out.println("Borrow failed: " + e.getMessage());
+            library.loadFromFile();
+        } catch (IOException e) {
+            System.out.println("Could not load data: " + e.getMessage());
         }
 
-        // --- Test 2: return it immediately (should be on time, fine 0.0) ---
-        System.out.println("\n--- Test 2: return same day ---");
-        try {
-            double fine2 = library.returnBook("M001", "978-1");
-            System.out.println("Fine: " + fine2);
-        } catch (BookNotBorrowedException e) {
-            System.out.println("Return failed: " + e.getMessage());
+        boolean running = true;
+        while (running) {
+            printMenu();
+            int choice = readInt("Choose an option: ");
+            switch (choice) {
+                case 1 -> addBook();
+                case 2 -> viewBooks();
+                case 0 -> running = !confirmExit();
+                default -> System.out.println("Invalid option. Please choose from the menu.");
+            }
         }
+        System.out.println("Goodbye!");
+    }
 
-        // --- Test 3: return a book that was never borrowed by this member ---
-        System.out.println("\n--- Test 3: return without borrowing ---");
-        try {
-            double fine3 = library.returnBook("M002", "978-2");
-            System.out.println("Fine: " + fine3);
-        } catch (BookNotBorrowedException e) {
-            System.out.println("Return failed: " + e.getMessage());
-        }
+    private static void printMenu() {
+        System.out.println();
+        System.out.println("===== Library Management System =====");
+        System.out.println("1. Add book");
+        System.out.println("2. View all books");
+        System.out.println("0. Exit");
+    }
 
-        // --- Test 4: return a book someone already returned (should fail again) ---
-        System.out.println("\n--- Test 4: return an already-returned book ---");
-        try {
-            double fine4 = library.returnBook("M001", "978-1");
-            System.out.println("Fine: " + fine4);
-        } catch (BookNotBorrowedException e) {
-            System.out.println("Return failed: " + e.getMessage());
-        }
+    // ---------- Actions ----------
 
-        // --- Test 5: return with nonexistent member ---
-        System.out.println("\n--- Test 5: nonexistent member ---");
-        try {
-            double fine5 = library.returnBook("M999", "978-2");
-            System.out.println("Fine: " + fine5);
-        } catch (BookNotBorrowedException e) {
-            System.out.println("Return failed: " + e.getMessage());
-        }
+    private static void addBook() {
+        String isbn = readNonEmpty("ISBN: ");
+        String title = readNonEmpty("Title: ");
+        String author = readNonEmpty("Author: ");
+        LocalDate publicationDate = readDate("Publication date");
 
-        // --- Test 6: return with nonexistent ISBN ---
-        System.out.println("\n--- Test 6: nonexistent book ---");
-        try {
-            double fine6 = library.returnBook("M001", "978-999");
-            System.out.println("Fine: " + fine6);
-        } catch (BookNotBorrowedException e) {
-            System.out.println("Return failed: " + e.getMessage());
+        if (library.addBook(new Book(isbn, title, author, publicationDate))) {
+            System.out.println("Book added.");
+            saveData();
         }
-                System.out.println("\n--- Test 7: search books by title (partial, case-insensitive) ---");
-        List<Book> titleResults = library.searchBooksByTitle("clean");
-        for (Book b : titleResults) {
+    }
+
+    private static void viewBooks() {
+        List<Book> books = library.viewBooks();
+        if (books.isEmpty()) {
+            System.out.println("No books in the catalog.");
+            return;
+        }
+        for (Book b : books) {
             System.out.println(b);
         }
+    }
 
-        System.out.println("\n--- Test 8: search books by author (partial, case-insensitive) ---");
-        List<Book> authorResults = library.searchBooksByAuthor("bloch");
-        for (Book b : authorResults) {
-            System.out.println(b);
-        }
+    // ---------- Persistence ----------
 
-        System.out.println("\n--- Test 9: list currently borrowed books ---");
-        try {
-            library.borrowBook("M002", "978-2"); // borrow something so this list isn't empty
-        } catch (LibraryException e) {
-            System.out.println("Borrow failed: " + e.getMessage());
-        }
-        List<Book> borrowedNow = library.listBorrowedBooks();
-        for (Book b : borrowedNow) {
-            System.out.println(b);
-        }
-
-        System.out.println("\n--- Test 10: list overdue books (expect empty right now) ---");
-        List<Book> overdueNow = library.listOverdueBooks();
-        System.out.println("Overdue count: " + overdueNow.size());
-
-        System.out.println("\n--- Test 11: equals() by ISBN ---");
-        Book duplicateBook = new Book("978-1", "Effective Java", "Joshua Bloch", LocalDate.of(2018, 1, 6));
-        System.out.println("book1.equals(duplicateBook): " + book1.equals(duplicateBook));
-        System.out.println("book1 == duplicateBook: " + (book1 == duplicateBook));
-
-        // --- Final state ---
-        System.out.println("\n--- Final Book States ---");
-        for (Book b : library.viewBooks()) {
-            System.out.println(b);
-        }
-
-        System.out.println("\n--- Final Member States ---");
-        for (Member m : library.viewMembers()) {
-            System.out.println(m);
-        }
+    private static void saveData() {
         try {
             library.saveToFile();
-            System.out.println("Saved.");
-
-            Library reloaded = new Library();
-            reloaded.loadFromFile();
-            System.out.println("--- Reloaded books ---");
-            for (Book b : reloaded.viewBooks()) System.out.println(b);
-            System.out.println("--- Reloaded members ---");
-            for (Member m : reloaded.viewMembers()) System.out.println(m);
-            System.out.println("Borrowed after reload: " + reloaded.listBorrowedBooks().size());
         } catch (IOException e) {
-            System.out.println("File error: " + e.getMessage());
-            }
+            System.out.println("Warning: could not save data: " + e.getMessage());
+        }
     }
-    
+
+    private static boolean confirmExit() {
+        String answer = readNonEmpty("Are you sure you want to exit? (y/n): ");
+        if (answer.equalsIgnoreCase("y")) {
+            saveData();
+            return true;
+        }
+        return false;
+    }
+
+    // ---------- Input helpers: read a whole line, then parse ----------
+
+    private static int readInt(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String line = scanner.nextLine().trim();
+            try {
+                return Integer.parseInt(line);
+            } catch (NumberFormatException e) {
+                System.out.println("Please enter a whole number.");
+            }
+        }
+    }
+
+    private static String readNonEmpty(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+            String line = scanner.nextLine().trim();
+            if (!line.isEmpty()) {
+                return line;
+            }
+            System.out.println("This field cannot be empty.");
+        }
+    }
+
+    private static LocalDate readDate(String prompt) {
+        while (true) {
+            System.out.print(prompt + " (yyyy-mm-dd): ");
+            try {
+                return LocalDate.parse(scanner.nextLine().trim());
+            } catch (DateTimeParseException e) {
+                System.out.println("Invalid date. Use yyyy-mm-dd, for example 2018-01-06.");
+            }
+        }
+    }
 }
