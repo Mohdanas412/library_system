@@ -1,4 +1,11 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +22,22 @@ public class Library {
         members = new ArrayList<>();
     }
 
+    // Our file format is comma-separated, so a comma inside any field would corrupt it.
+    // "String..." (varargs) lets us pass any number of strings to one helper.
+    private static boolean hasComma(String... fields) {
+        for (String f : fields) {
+            if (f != null && f.contains(",")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public boolean addBook(Book newBook) {
+        if (hasComma(newBook.getISBN(), newBook.getTitle(), newBook.getAuthor())) {
+            System.out.println("Commas are not allowed in ISBN, title or author.");
+            return false;
+        }
         for (Book b : books) {
             if (b.getISBN().equals(newBook.getISBN())) {
                 System.out.println("Book with ISBN " + newBook.getISBN() + " already exists.");
@@ -27,6 +49,11 @@ public class Library {
     }
 
     public boolean registerMember(Member newMember) {
+        if (hasComma(newMember.getMember_ID(), newMember.getName(),
+                newMember.getMobileNum(), newMember.getEmail())) {
+            System.out.println("Commas are not allowed in member ID, name, mobile or email.");
+            return false;
+        }
         for (Member m : members) {
             if (m.getMember_ID().equals(newMember.getMember_ID())) {
                 System.out.println("Member with ID " + newMember.getMember_ID() + " already exists.");
@@ -45,7 +72,8 @@ public class Library {
         return members;
     }
 
-    public boolean borrowBook(String member_ID, String ISBN) throws BookNotAvailableException, BorrowLimitExceededException {
+    public boolean borrowBook(String member_ID, String ISBN)
+            throws BookNotAvailableException, BorrowLimitExceededException {
         Member foundMember = null;
         for (Member m : members) {
             if (m.getMember_ID().equals(member_ID)) {
@@ -146,26 +174,171 @@ public class Library {
 
     public List<Book> searchBooksByTitle(String keyword) {
         return books.stream()
-           .filter(b -> b.getTitle().toLowerCase().contains(keyword.toLowerCase()))
-           .collect(Collectors.toList());
+                .filter(b -> b.getTitle().toLowerCase().contains(keyword.toLowerCase()))
+                .collect(Collectors.toList());
     }
 
     public List<Book> searchBooksByAuthor(String keyword) {
         return books.stream()
-           .filter(b -> b.getAuthor().toLowerCase().contains(keyword.toLowerCase()))
-           .collect(Collectors.toList());
+                .filter(b -> b.getAuthor().toLowerCase().contains(keyword.toLowerCase()))
+                .collect(Collectors.toList());
     }
+
     public List<Book> listBorrowedBooks() {
         return borrowRecords.stream()
-           .filter(r -> !r.isReturned())
-           .map(BorrowRecord::getBook)
-           .collect(Collectors.toList());
+                .filter(r -> !r.isReturned())
+                .map(BorrowRecord::getBook)
+                .collect(Collectors.toList());
     }
+
     public List<Book> listOverdueBooks() {
         LocalDate today = LocalDate.now();
         return borrowRecords.stream()
-           .filter(r -> !r.isReturned() && today.isAfter(r.getDueDate()))
-           .map(BorrowRecord::getBook)
-           .collect(Collectors.toList());
+                .filter(r -> !r.isReturned() && today.isAfter(r.getDueDate()))
+                .map(BorrowRecord::getBook)
+                .collect(Collectors.toList());
+    }
+
+    // ---------------- Persistence (Module 6) ----------------
+
+    public void saveToFile() throws IOException {
+        // books.txt: ISBN,title,author,publicationDate,status
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("books.txt"))) {
+            for (Book b : books) {
+                writer.write(b.getISBN() + "," + b.getTitle() + "," + b.getAuthor() + ","
+                        + b.getPublicationDate() + "," + b.getStatus());
+                writer.newLine();
+            }
+        }
+
+        // members.txt: memberId,name,mobile,email (no borrowed list: derived from records)
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("members.txt"))) {
+            for (Member m : members) {
+                writer.write(m.getMember_ID() + "," + m.getName() + ","
+                        + m.getMobileNum() + "," + m.getEmail());
+                writer.newLine();
+            }
+        }
+
+        // borrowrecords.txt: memberId,ISBN,borrowDate,dueDate,returned
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter("borrowrecords.txt"))) {
+            for (BorrowRecord r : borrowRecords) {
+                writer.write(r.getMember().getMember_ID() + "," + r.getBook().getISBN() + ","
+                        + r.getBorrowDate() + "," + r.getDueDate() + "," + r.isReturned());
+                writer.newLine();
+            }
+        }
+    }
+
+    public void loadFromFile() throws IOException {
+        books.clear();
+        members.clear();
+        borrowRecords.clear();
+
+        // 1. Load books
+        File booksFile = new File("books.txt");
+        if (booksFile.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(booksFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    try {
+                        String[] parts = line.split(",", -1);
+                        if (parts.length != 5) {
+                            System.out.println("Skipping malformed book line: " + line);
+                            continue;
+                        }
+                        String isbn = parts[0];
+                        String title = parts[1];
+                        String author = parts[2];
+                        LocalDate publicationDate = LocalDate.parse(parts[3]);
+                        BookStatus status = BookStatus.valueOf(parts[4]);
+
+                        Book b = new Book(isbn, title, author, publicationDate);
+                        // BORROWED is derived from active borrow records (step 3),
+                        // so it is never trusted from the file. LOST/RESERVED can't be derived, so they are.
+                        b.setStatus(status == BookStatus.BORROWED ? BookStatus.AVAILABLE : status);
+                        books.add(b);
+                    } catch (DateTimeParseException | IllegalArgumentException e) {
+                        System.out.println("Skipping broken book line: " + line);
+                    }
+                }
+            }
+        } else {
+            System.out.println("books.txt not found - starting with no books.");
+        }
+
+        // 2. Load members
+        File membersFile = new File("members.txt");
+        if (membersFile.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(membersFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    String[] parts = line.split(",", -1);
+                    if (parts.length != 4) {
+                        System.out.println("Skipping malformed member line: " + line);
+                        continue;
+                    }
+                    members.add(new Member(parts[0], parts[1], parts[2], parts[3]));
+                }
+            }
+        } else {
+            System.out.println("members.txt not found - starting with no members.");
+        }
+
+        // 3. Load borrow records and reconnect relationships by ID
+        File recordsFile = new File("borrowrecords.txt");
+        if (recordsFile.exists()) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(recordsFile))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    try {
+                        String[] parts = line.split(",", -1);
+                        if (parts.length != 5) {
+                            System.out.println("Skipping malformed borrow record line: " + line);
+                            continue;
+                        }
+                        String memberId = parts[0];
+                        String isbn = parts[1];
+                        LocalDate borrowDate = LocalDate.parse(parts[2]);
+                        LocalDate dueDate = LocalDate.parse(parts[3]);
+                        boolean returned = Boolean.parseBoolean(parts[4]);
+
+                        Book foundBook = null;
+                        for (Book b : books) {
+                            if (b.getISBN().equals(isbn)) {
+                                foundBook = b;
+                                break;
+                            }
+                        }
+
+                        Member foundMember = null;
+                        for (Member m : members) {
+                            if (m.getMember_ID().equals(memberId)) {
+                                foundMember = m;
+                                break;
+                            }
+                        }
+
+                        if (foundBook == null || foundMember == null) {
+                            System.out.println("Skipping borrow record with missing book/member: " + line);
+                            continue;
+                        }
+
+                        BorrowRecord record = new BorrowRecord(foundBook, foundMember, borrowDate, dueDate);
+                        if (returned) {
+                            record.markReturned();
+                        } else {
+                            foundBook.setStatus(BookStatus.BORROWED);
+                            foundMember.getBorrowedBooks().add(foundBook);
+                        }
+                        borrowRecords.add(record);
+                    } catch (DateTimeParseException e) {
+                        System.out.println("Skipping broken borrow record line: " + line);
+                    }
+                }
+            }
+        } else {
+            System.out.println("borrowrecords.txt not found - starting with no borrow records.");
+        }
     }
 }

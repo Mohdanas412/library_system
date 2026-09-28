@@ -1,3 +1,4 @@
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -113,5 +114,20 @@ public class Main {
         for (Member m : library.viewMembers()) {
             System.out.println(m);
         }
+        try {
+            library.saveToFile();
+            System.out.println("Saved.");
+
+            Library reloaded = new Library();
+            reloaded.loadFromFile();
+            System.out.println("--- Reloaded books ---");
+            for (Book b : reloaded.viewBooks()) System.out.println(b);
+            System.out.println("--- Reloaded members ---");
+            for (Member m : reloaded.viewMembers()) System.out.println(m);
+            System.out.println("Borrowed after reload: " + reloaded.listBorrowedBooks().size());
+        } catch (IOException e) {
+            System.out.println("File error: " + e.getMessage());
+            }
     }
+    
 }
