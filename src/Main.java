@@ -65,8 +65,8 @@ public class Main {
         System.out.println(" 6. Search books by author");
         System.out.println(" 7. List borrowed books");
         System.out.println(" 8. List overdue books");
-        System.out.println(" 9. View all books in library");
-        System.out.println("10. View all members in Library");
+        System.out.println(" 9. View all books ");
+        System.out.println("10. View all members ");
         System.out.println(" 0. Exit");
     }
 
