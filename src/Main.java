@@ -33,7 +33,7 @@ public class Main {
                         case 4 -> returnBook();
                         case 5 -> searchByTitle();
                         case 6 -> searchByAuthor();
-                        case 7 -> printBooks(library.listBorrowedBooks(), "No books are currently borrowed.");
+                        case 7 -> printBooks(library.listBorrowedBooks(), "No books are currently borrowed by any member.");
                         case 8 -> printBooks(library.listOverdueBooks(), "No overdue books.");
                         case 9 -> printBooks(library.viewBooks(), "No books in the catalog.");
                         case 10 -> viewMembers();
