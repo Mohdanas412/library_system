@@ -48,10 +48,10 @@ public class Main {
         } catch (NoSuchElementException e) {
             // Input stream closed (Ctrl+D): save and leave instead of crashing.
             System.out.println();
-            System.out.println("Input closed. Saving and exiting.");
+            System.out.println("Input closed! Saving and exiting.");
             saveData();
         }
-        System.out.println("Goodbye!");
+        System.out.println("Goodbye!!");
     }
 
     private static void printMenu() {
