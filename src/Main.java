@@ -79,7 +79,7 @@ public class Main {
         LocalDate publicationDate = readPublicationDate();
 
         if (library.addBook(new Book(isbn, title, author, publicationDate))) {
-            System.out.println("Book added.");
+            System.out.println("Book added to library.");
             saveData();
         }
     }
@@ -91,7 +91,7 @@ public class Main {
         String email = readEmail();
 
         if (library.registerMember(new Member(id, name, mobile, email))) {
-            System.out.println("Member registered.");
+            System.out.println("Member registered to library.");
             saveData();
         }
     }
